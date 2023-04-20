@@ -1,0 +1,34 @@
+pipeline {
+    agent any
+    stages {
+        stage('Build') {
+            steps {
+                // Get code from a GitHub repository
+                git url: 'https://github.com/Ranjith93Github/kops.git', branch: 'main',
+                 credentialsId: 'github_creds'
+            }
+        }
+       stage('Build the Docker image') {
+          steps { 
+          sh 'docker build -t kopsimage /var/lib/jenkins/workspace/kops'
+          sh 'docker tag kopsimage ranjithdocker93/kopsimage:latest'
+          sh 'docker tag kopsimage ranjithdocker93/kopsimage:${BUILD_NUMBER}'
+          }
+       }
+      stage('push the Docker image') {
+         steps {
+            sh 'docker image push --all-tags ranjithdocker93/kopsimage'
+          }
+       }
+      stage('Deploy on Kubernetes') {
+         steps {
+            sh 'kubectl apply -f /var/lib/jenkins/workspace/kops/pod.yml'
+            sh 'kubectl rollout restart deployment loadbalancer-pod'
+          }
+       }
+    }
+}
+      
+
+
+https://stackoverflow.com/questions/73934693/jenkins-wont-start
